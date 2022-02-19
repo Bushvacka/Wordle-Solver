@@ -24,7 +24,9 @@ def generatePattern(word, answer):
     return pattern
 
 def uMatchDistribution(guess, valid_guesses):
-    """"""
+    """
+    Generate the possible answers for all patterns resulting from making a guess
+    """
     match_distribution = {}
     for answer in valid_guesses:
         pattern = generatePattern(guess, answer)
@@ -35,17 +37,31 @@ def uMatchDistribution(guess, valid_guesses):
             match_distribution[temp_t] = [answer]
     return match_distribution
 
+def uMatchNumDistribution(guess, valid_guesses):
+    """
+    Generate the number of possible answers for all patterns resulting from making a guess
+    """
+    match_distribution = {}
+    for answer in valid_guesses:
+        pattern = generatePattern(guess, answer)
+        temp_t = str(pattern)
+        if temp_t in match_distribution:
+            match_distribution[temp_t] += 1
+        else:
+            match_distribution[temp_t] = 1
+    return match_distribution
+
 def uExpectedInformation(word, valid_guesses):
     """Assuming a uniform distribution(not actually present), return the expected information(in bits) of word"""
     # Calculate the # of matches for each pattern
-    match_distribution = uMatchDistribution(word, valid_guesses)
+    match_distribution = uMatchNumDistribution(word, valid_guesses)
     
     # Calculate the information of each pattern, return the average
     total_guesses = len(valid_guesses) * 1.0
 
     expected_info = 0.0
-    for matches in match_distribution.values():
-        p = len(matches)/total_guesses
+    for num_matches in match_distribution.values():
+        p = num_matches/total_guesses
         i = math.log2(1/p)
         expected_info += p * i
     return expected_info
