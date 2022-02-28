@@ -1,12 +1,11 @@
-from cv2 import validateDisparity
 import solver
 import os
 PATH_GUESSES = "Resources/allowed_guesses.txt"
 PATH_ANSWERS = "Resources/possible_answers.txt"
 MAX_TRIES = 6
 WORD_SIZE = 5
-ABSENT = "⬛"
 MISSED = "🟨"
+ABSENT = "⬛"
 CORRECT = "🟩"
 SOLVED = [2] * WORD_SIZE
 DEBUG = True
@@ -25,6 +24,20 @@ def loadAnswers():
         for line in f.readlines():
             answers.append(line.strip())
     return answers
+
+def patternToString(pattern):
+    """Convert a pattern to text"""
+    txt = ""
+    for element in pattern:
+        if (element == 0):
+            txt += ABSENT
+        elif (element == 1):
+            txt += MISSED
+        else:
+            txt += CORRECT
+    txt += "\n"
+    return txt
+
 
 def bestFirstGuess(valid_guesses):
     """Returns the word with the highest expected information for the first guess"""
@@ -59,15 +72,16 @@ def simulateGames(valid_guesses, valid_answers, first_guess = None):
         first_guess = bestFirstGuess(valid_guesses)
 
     scores = [0] * (MAX_TRIES + 1)
-    for answer in valid_answers:
+    for i, answer in enumerate(valid_answers):
         # Initialize answer specific values
         remaining_answers = valid_guesses
         score = 0
         pattern = [0] * WORD_SIZE
-
-
+        guesses = [first_guess]
+        patterns = ""
         # Make first guess
         pattern = solver.generatePattern(first_guess, answer)
+        patterns += patternToString(pattern)
         # Update the list of valid guesses based on the pattern
         remaining_answers = solver.uMatchDistribution(first_guess, remaining_answers)[str(pattern)]
 
@@ -76,19 +90,34 @@ def simulateGames(valid_guesses, valid_answers, first_guess = None):
             # Find the guess with the highest expected information
             best_guess = remaining_answers[0]
             best_info = 0
-            for i, guess in enumerate(remaining_answers):
+            for guess in remaining_answers:
                 info = solver.uExpectedInformation(guess, remaining_answers)
+
                 # Replace the best guess if our expected information is higher
                 if (info > best_info):
                     best_guess = guess
                     best_info = info
-                    
+            
             # Make the guess and find the resulting pattern
+            guesses.append(best_guess)
             pattern = solver.generatePattern(best_guess, answer)
+            patterns += patternToString(pattern)
             # Update the list of valid guesses based on the pattern
             remaining_answers = solver.uMatchDistribution(best_guess, remaining_answers)[str(pattern)]
             score += 1
+            if DEBUG:
+                os.system("cls")
+                print("Score: ", score)
+                print("Answer:", answer)
+                print("Guesses:", guesses)
+                print(patterns)
+                print("Distribution:", scores)
+                percent = ((i + 1) / float(len(valid_answers)))*100
+                filled = round((BAR_LENGTH * (i + 1)) / float(len(valid_answers)))
+                bar = "[" + "=" * filled + "-" * (BAR_LENGTH - filled) + "]"
+                print("{0} {1:0.1f}% {2}/{3}".format(bar, percent, i+1, len(valid_answers)))
         scores[score] += 1
+
     return scores
 
 

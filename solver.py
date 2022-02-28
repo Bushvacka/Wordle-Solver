@@ -1,6 +1,4 @@
-from distutils.log import info
 import math
-from re import I
 
 
 WORD_SIZE = 5
@@ -13,14 +11,26 @@ def generatePattern(word, answer):
     1 - MISSED
     2 - CORRECT
     """
+
+    # Generate array copies
+    answer_arr = []
+    for i in range(WORD_SIZE):
+        answer_arr.append(answer[i])
+
     pattern = [0] * WORD_SIZE
+    # First pass - Green
     for i in range(WORD_SIZE):
         if (word[i] == answer[i]):
             pattern[i] = 2
-        elif (word[i] in answer):
+            # Remove match to prevent double-counting in second pass
+            answer_arr[i] = None
+    
+    #Second pass - Yellow
+    for i in range(WORD_SIZE):
+        if (word[i] in answer_arr and pattern[i] == 0):
             pattern[i] = 1
-        else:
-            pattern[i] = 0
+            # Remove match to prevent double-counting
+            answer_arr.remove(word[i])
     return pattern
 
 def uMatchDistribution(guess, valid_guesses):
@@ -64,14 +74,7 @@ def uExpectedInformation(word, valid_guesses):
         p = num_matches/total_guesses
         i = math.log2(1/p)
         expected_info += p * i
-    return expected_info
-
-def uExpectedInformationDistribution(valid_guesses):
-    info_distribution = {}
-    for guess in valid_guesses:
-        info_distribution[guess] = uExpectedInformation(guess, valid_guesses)
-    return info_distribution
-    
+    return expected_info   
 
 
 if __name__ == "__main__":

@@ -19,6 +19,10 @@ class Test_TestSolver(unittest.TestCase):
 
     def test_generatePatternDuplicateLetters(self):
         self.assertEqual(solver.generatePattern("babes", "abbey"), [1, 1, 2, 2, 0])
+        self.assertEqual(solver.generatePattern("speed", "abide"), [0, 0, 1, 0, 1])
+        self.assertEqual(solver.generatePattern("speed", "erase"), [1, 0, 1, 1, 0])
+        self.assertEqual(solver.generatePattern("speed", "steal"), [2, 0, 2, 0, 0])
+        self.assertEqual(solver.generatePattern("speed", "crepe"), [0, 1, 2, 1, 0])
 
 if __name__ == '__main__':
     unittest.main()
