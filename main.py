@@ -1,15 +1,17 @@
 import solver
 import os
+#Program Constants
 PATH_GUESSES = "Resources/allowed_guesses.txt"
 PATH_ANSWERS = "Resources/possible_answers.txt"
+DEBUG = True
+BAR_LENGTH = 40
+# Game Constants
 MAX_TRIES = 6
 WORD_SIZE = 5
 MISSED = "🟨"
 ABSENT = "⬛"
 CORRECT = "🟩"
 SOLVED = [2] * WORD_SIZE
-DEBUG = True
-BAR_LENGTH = 40
 
 def loadGuesses():
     guesses = []
@@ -38,25 +40,27 @@ def patternToString(pattern):
     txt += "\n"
     return txt
 
+def displayBar(partial, total):
+    """Print a percent completion bar to the terminal"""
+    percent = (partial / total) * 100
+    filled = int((BAR_LENGTH * partial) / total)
+    bar = "[" + "=" * filled + "-" * (BAR_LENGTH - filled) + "]"
+    print("{0} {1:0.1f}% {2}/{3}".format(bar, percent, partial, total))
 
-def bestFirstGuess(valid_guesses):
+def bestFirstGuess(valid_guesses, valid_answers):
     """Returns the word with the highest expected information for the first guess"""
     best_guess = None
     best_info = 0
-    for i, guess in enumerate(valid_guesses):
-        info = solver.uExpectedInformation(guess, valid_guesses)
+    for i, guess in enumerate(valid_answers):
+        info = solver.expectedInformation(guess, valid_answers)
         # Replace the best guess if our expected information is higher
         if (info > best_info):
             best_guess = guess
             best_info = info
         if DEBUG:
             os.system("cls")
-            percent = ((i + 1) / float(len(valid_guesses)))*100
-            filled = round((BAR_LENGTH * (i + 1)) / float(len(valid_guesses)))
-            bar = "[" + "=" * filled + "-" * (BAR_LENGTH - filled) + "]"
-            print("Solving", valid_guesses)
             print("Guess: {0} Best Guess: {1} E[I]: {2:0.2f}".format(guess, best_guess, best_info))
-            print("{0} {1:0.1f}% {2}/{3}".format(bar, percent, i+1, len(valid_guesses)))
+            displayBar(i + 1, len(valid_answers))
     return best_guess
 
     
@@ -69,29 +73,30 @@ def simulateGames(valid_guesses, valid_answers, first_guess = None):
     """
     # If the first guess is not provided, calculate the optimal first guess.
     if (first_guess == None):
-        first_guess = bestFirstGuess(valid_guesses)
+        first_guess = bestFirstGuess(valid_guesses, valid_answers)
 
     scores = [0] * (MAX_TRIES + 1)
     for i, answer in enumerate(valid_answers):
         # Initialize answer specific values
-        remaining_answers = valid_guesses
+        remaining_answers = valid_answers
         score = 0
         pattern = [0] * WORD_SIZE
-        guesses = [first_guess]
-        patterns = ""
+
         # Make first guess
+        guesses = [first_guess]
         pattern = solver.generatePattern(first_guess, answer)
-        patterns += patternToString(pattern)
+        patterns = patternToString(pattern)
+
         # Update the list of valid guesses based on the pattern
-        remaining_answers = solver.uMatchDistribution(first_guess, remaining_answers)[str(pattern)]
+        remaining_answers = solver.patternDistribution(first_guess, remaining_answers)[str(pattern)]
 
         # If our guess was not the solution, calculate a new guess
         while (score < MAX_TRIES and pattern != SOLVED):
             # Find the guess with the highest expected information
-            best_guess = remaining_answers[0]
+            best_guess = None
             best_info = 0
             for guess in remaining_answers:
-                info = solver.uExpectedInformation(guess, remaining_answers)
+                info = solver.expectedInformation(guess, remaining_answers)
 
                 # Replace the best guess if our expected information is higher
                 if (info > best_info):
@@ -102,9 +107,11 @@ def simulateGames(valid_guesses, valid_answers, first_guess = None):
             guesses.append(best_guess)
             pattern = solver.generatePattern(best_guess, answer)
             patterns += patternToString(pattern)
-            # Update the list of valid guesses based on the pattern
-            remaining_answers = solver.uMatchDistribution(best_guess, remaining_answers)[str(pattern)]
             score += 1
+
+            # Update the list of valid guesses based on the pattern
+            remaining_answers = solver.patternDistribution(best_guess, remaining_answers)[str(pattern)]
+
             if DEBUG:
                 os.system("cls")
                 print("Score: ", score)
@@ -112,10 +119,7 @@ def simulateGames(valid_guesses, valid_answers, first_guess = None):
                 print("Guesses:", guesses)
                 print(patterns)
                 print("Distribution:", scores)
-                percent = ((i + 1) / float(len(valid_answers)))*100
-                filled = round((BAR_LENGTH * (i + 1)) / float(len(valid_answers)))
-                bar = "[" + "=" * filled + "-" * (BAR_LENGTH - filled) + "]"
-                print("{0} {1:0.1f}% {2}/{3}".format(bar, percent, i+1, len(valid_answers)))
+                displayBar(i + 1, len(valid_answers))
         scores[score] += 1
 
     return scores
@@ -123,10 +127,14 @@ def simulateGames(valid_guesses, valid_answers, first_guess = None):
 
 
 def main():
-    # Load files
+    # Load necessary files
     valid_guesses = loadGuesses()
     valid_answers = loadAnswers()
-    simulateGames(valid_guesses, valid_answers, "tares")
+
+    # Simulate all games with an initial guess of "raise"
+    simulateGames(valid_guesses, valid_answers, "raise")
+
+    input("Press any key to exit")
 
 
 

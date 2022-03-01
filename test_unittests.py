@@ -12,7 +12,7 @@ class Test_TestFileLoad(unittest.TestCase):
 
 class Test_TestSolver(unittest.TestCase):
     def test_expectedInformation(self):
-        self.assertAlmostEqual(solver.uExpectedInformation("weary", main.loadGuesses()), 4.902, delta=3)
+        self.assertAlmostEqual(solver.expectedInformation("weary", main.loadGuesses()), 4.902, delta=3)
 
     def test_generatePattern(self):
         self.assertEqual(solver.generatePattern("weary", "wordy"), [2, 0, 0, 1, 2])
